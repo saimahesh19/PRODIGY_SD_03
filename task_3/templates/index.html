@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f3f3;
+            color: #333;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #007bff;
+        }
+
+        #container {
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        select, input, button {
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        select {
+            width: 100%;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #contacts {
+            margin-top: 20px;
+        }
+
+        .contact {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        .contact strong {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Contact Manager</h1>
+
+    <div id="container">
+        <h2>Select an Action</h2>
+        <select id="actionSelect">
+            <option value="add">Add Contact</option>
+            <option value="edit">Edit Contact</option>
+            <option value="delete">Delete Contact</option>
+            <option value="view">View Contacts</option>
+        </select>
+
+        <div id="addContactForm" style="display:none;">
+            <h2>Add Contact</h2>
+            <form>
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required><br>
+                <label for="phone">Phone:</label>
+                <input type="text" id="phone" name="phone" required><br>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required><br>
+                <button type="submit">Add Contact</button>
+            </form>
+        </div>
+
+        <div id="editContactForm" style="display:none;">
+            <h2>Edit Contact</h2>
+            <form>
+                <label for="editName">Name:</label>
+                <input type="text" id="editName" name="editName" required><br>
+                <label for="editPhone">New Phone:</label>
+                <input type="text" id="editPhone" name="editPhone" required><br>
+                <label for="editEmail">New Email:</label>
+                <input type="email" id="editEmail" name="editEmail" required><br>
+                <button type="submit">Edit Contact</button>
+            </form>
+        </div>
+
+        <div id="deleteContactForm" style="display:none;">
+            <h2>Delete Contact</h2>
+            <form>
+                <label for="deleteName">Name:</label>
+                <input type="text" id="deleteName" name="deleteName" required><br>
+                <button type="submit">Delete Contact</button>
+            </form>
+        </div>
+
+        <div id="contacts" style="display:none;">
+            <h2>Contact List</h2>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("actionSelect").addEventListener("change", function() {
+            var selectedAction = this.value;
+            document.getElementById("addContactForm").style.display = "none";
+            document.getElementById("editContactForm").style.display = "none";
+            document.getElementById("deleteContactForm").style.display = "none";
+            document.getElementById("contacts").style.display = "none";
+
+            if (selectedAction === "add") {
+                document.getElementById("addContactForm").style.display = "block";
+            } else if (selectedAction === "edit") {
+                document.getElementById("editContactForm").style.display = "block";
+            } else if (selectedAction === "delete") {
+                document.getElementById("deleteContactForm").style.display = "block";
+            } else if (selectedAction === "view") {
+                loadContacts();
+                document.getElementById("contacts").style.display = "block";
+            }
+        });
+
+        document.getElementById("addContactForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        var name = document.getElementById("name").value;
+        var phone = document.getElementById("phone").value;
+        var email = document.getElementById("email").value;
+
+        fetch('/add_contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                phone: phone,
+                email: email
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to add contact');
+            }
+        })
+        .then(data => {
+            alert(data.message);
+            document.getElementById("name").value = '';
+            document.getElementById("phone").value = '';
+            document.getElementById("email").value = '';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to add contact');
+        });
+    });
+    
+    document.getElementById("editContactForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        var name = document.getElementById("editName").value;
+        var phone = document.getElementById("editPhone").value;
+        var email = document.getElementById("editEmail").value;
+
+        fetch('/edit_contact', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                phone: phone,
+                email: email
+            })
+        })
+        .then(response => {
+            if (response.status === 200) {
+                alert("Contact edited successfully!");
+            } else {
+                alert("Contact not found.");
+            }
+            document.getElementById("editName").value = '';
+            document.getElementById("editPhone").value = '';
+            document.getElementById("editEmail").value = '';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    document.getElementById("deleteContactForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        var name = document.getElementById("deleteName").value;
+
+        fetch('/delete_contact', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name
+            })
+        })
+        .then(response => {
+            if (response.status === 200) {
+                alert("Contact deleted successfully!");
+            } else {
+                alert("Contact not found.");
+            }
+            document.getElementById("deleteName").value = '';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    function loadContacts() {
+        fetch('/contacts')
+        .then(response => response.json())
+        .then(contacts => {
+            var contactsDiv = document.getElementById("contacts");
+            contactsDiv.innerHTML = '';
+            for (var name in contacts) {
+                var info = contacts[name];
+                var contactDiv = document.createElement("div");
+                contactDiv.classList.add("contact");
+                contactDiv.innerHTML = "<strong>Name:</strong> " + name + "<br>" +
+                                        "<strong>Phone:</strong> " + info[0] + "<br>" +
+                                        "<strong>Email:</strong> " + info[1] + "<br>";
+                contactsDiv.appendChild(contactDiv);
+            }
+            document.getElementById("contacts").style.display = "block";
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+</body>
+</html>
